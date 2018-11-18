@@ -36,6 +36,9 @@ proc mnistLoad*(imageFilePath: string, labelFilePath: string): MnistImages
 
 # Manually request download of MNIST files to specified directory
 proc mnistDownload*(outputDir: string = "")
+
+# Convert the datasets to CSV
+proc mnistToCsv*(sourceDir = "", outputDir = "")
 ```
 
 ## Examples
