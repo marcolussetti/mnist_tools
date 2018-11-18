@@ -15,7 +15,9 @@ type
 Provides a very coarse ascii print of the image as such:
 ```nim
 import mnist_tools
-let mnistImages = mnistLoadDefaults()
+# Will automatically download in local directory or other provided path
+let mnistTraining = mnistTrainingData()
+let mnistTest = mnistTestData()
 
-mnistCoarseAsciiDisplay(mnistImages[7]) # Should print a mediocre "3"
+echo mnistTraining[7].image.mnistCoarseAsciiImage # Should print a "3"
 ```

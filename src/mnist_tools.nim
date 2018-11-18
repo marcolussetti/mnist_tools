@@ -1,9 +1,26 @@
-import streams, strutils, endians, os, sequtils
+import streams, strutils, endians, os, sequtils, httpclient
 import zip/gzipfiles
 
 type
     MnistImages = seq[MnistImage]
     MnistImage = tuple[label: int, image: seq[int]]
+
+const baseUrl = "http://yann.lecun.com/exdb/mnist/"
+const files = [
+    "train-images-idx3-ubyte.gz",
+    "train-labels-idx1-ubyte.gz",
+    "t10k-images-idx3-ubyte.gz",
+    "t10k-labels-idx1-ubyte.gz"
+]
+
+proc mnistDownload*(outputDir: string = "") =
+    var client = newHttpClient()
+    for file in files:
+        if not existsFile(outputDir & file):
+            echo("Downloading " & baseUrl & file & " ...")
+            client.downloadFile(baseUrl & file, outputDir & file)
+            assert existsFile(outputDir & file),
+                "For some reason file was not downloaded successfully"
 
 proc readInt32BigEndian(input: Stream): int32 =
     var bytes = input.readInt32
@@ -18,7 +35,8 @@ proc readIntFromIdx(input: Stream): int =
 proc mnistLoadLabels(labelFileStream: Stream): seq[int] =
     # Extract metadata about file
     let magicNumber = int(labelFileStream.readInt32BigEndian)
-    assert magicNumber == 2049, "Incorrect magic number provided! Is this a MNIST labels dataset?"
+    assert magicNumber == 2049,
+        "Incorrect magic number provided! Is this a MNIST labels dataset?"
     let numberLabels = int(labelFileStream.readInt32BigEndian)
 
     var mnistLabels = newSeq[int]()
@@ -31,7 +49,8 @@ proc mnistLoadLabels(labelFileStream: Stream): seq[int] =
 proc mnistLoadImages(imageFileStream: Stream): seq[seq[int]] =
     # Extract metadata about file
     let magicNumber = imageFileStream.readInt32BigEndianAsInt
-    assert magicNumber == 2051, "Incorrect magic number provided! Is this a MNIST dataset?"
+    assert magicNumber == 2051,
+        "Incorrect magic number provided! Is this a MNIST dataset?"
     let numberImages = imageFileStream.readInt32BigEndianAsInt
     let rowsInImage = imageFileStream.readInt32BigEndianAsInt
     let columnsInImage = imageFileStream.readInt32BigEndianAsInt
@@ -54,11 +73,14 @@ proc mnistCombine(labels: seq[int], images: seq[seq[int]]): MnistImages =
         result[i] = (label: labels[i], image: images[i])
 
 
-proc mnistLoad*(imageFilePath: string, labelFilePath: string, gunzipped: bool = true): MnistImages =
+proc mnistLoad*(imageFilePath: string, labelFilePath: string,
+        gunzipped: bool = true): MnistImages =
     if not existsFile(labelFilePath):
-        raise newException(IOError, "Label path provided does not exist or is not a file.")
+        raise newException(IOError,
+                "Label path provided does not exist or is not a file.")
     if not existsFile(labelFilePath):
-        raise newException(IOError, "Path provided does not exist or is not a file.")
+        raise newException(IOError,
+                "Path provided does not exist or is not a file.")
 
     var imageFileStream, labelFileStream: Stream
 
@@ -71,25 +93,33 @@ proc mnistLoad*(imageFilePath: string, labelFilePath: string, gunzipped: bool = 
 
     let images = mnistLoadImages(imageFileStream)
     let labels = mnistLoadLabels(labelFileStream)
-    assert labels.len == images.len, "The length of each file does not match!"
+    assert labels.len == images.len,
+        "The length of each file does not match!"
 
     imageFileStream.close
     labelFileStream.close
 
-    return mnistCombine(labels,images)
+    return mnistCombine(labels, images)
 
 
-proc mnistLoadDefaults*(): MnistImages =
-    return mnistLoad("train-images-idx3-ubyte.gz", "train-labels-idx1-ubyte.gz")
+proc mnistTrainingData*(sourceDir: string = ""): MnistImages =
+    if not existsFile(sourceDir & files[0]) or not existsFile(
+            sourceDir & files[1]):
+        mnistDownload(sourceDir)
+    return mnistLoad(sourceDir & files[0], sourceDir & files[1])
 
 
-proc mnistCoarseAsciiDisplay*(image: seq[int], cols: int = 28, threshold: int = 50) =
+proc mnistTestData*(sourceDir: string = ""): MnistImages =
+    if not existsFile(sourceDir & files[2]) or not existsFile(
+            sourceDir & files[3]):
+        mnistDownload(sourceDir)
+    return mnistLoad(sourceDir & files[2], sourceDir & files[3])
+
+
+proc mnistCoarseAsciiImage*(image: seq[int], cols: int = 28,
+        threshold: int = 50): string =
     for i in 0..<image.len:
-        if image[i] > threshold:
-            stdout.write("██")
-        else:
-            stdout.write("  ")
-        if (i mod cols == 0):
-            stdout.write("\n")
+        result &= (if image[i] > threshold: "██" else: "  ")
+        if i mod cols == 0: result &= "\n"
 
-    echo()
+    result &= "\n"
