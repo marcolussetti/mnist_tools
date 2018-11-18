@@ -11,3 +11,11 @@ Returns a sequence of tuples:
 type
     MnistImage = tuple[label: int, image: seq[int]]
 ```
+
+Provides a very coarse ascii print of the image as such:
+```nim
+import mnist_tools
+let mnistImages = mnistLoadDefaults()
+
+mnistCoarseAsciiDisplay(mnistImages[7]) # Should print a mediocre "3"
+```
