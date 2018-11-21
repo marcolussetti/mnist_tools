@@ -1,10 +1,6 @@
 import streams, strutils, endians, os, sequtils, httpclient, sugar
 import zip/gzipfiles
 
-type
-    MnistImages* = seq[MnistImage]
-    MnistImage* = tuple[label: int, image: seq[int]]
-
 const baseUrl = "http://yann.lecun.com/exdb/mnist/"
 const files = [
     "train-images-idx3-ubyte.gz",
@@ -65,14 +61,16 @@ proc mnistLoadImages(imageFileStream: Stream): seq[seq[int]] =
     return mnistImages
 
 
-proc mnistCombine(labels: seq[int], images: seq[seq[int]]): MnistImages =
+proc mnistCombine(labels: seq[int], images: seq[seq[int]]): seq[tuple[a: int,
+        b: seq[int]]] =
     var minLen = min(labels.len, images.len)
     newSeq(result, minLen)
     for i in 0..<minLen:
-        result[i] = (label: labels[i], image: images[i])
+        result[i] = (labels[i], images[i])
 
 
-proc mnistImagesToCsv(images: MnistImages): string =
+proc mnistImagesToCsv(images: seq[tuple[a: int,
+        b: seq[int]]]): string =
     let header = lc[ [$i, $j].join("_") | (i <- 0..<28, j <- 0..<28), string]
     result &= "Label," & header.join(",")
     result &= "\n"
@@ -93,7 +91,9 @@ proc mnistDownload*(outputDir: string = "") =
                 "For some reason file was not downloaded successfully"
 
 
-proc mnistLoad*(imageFilePath: string, labelFilePath: string): MnistImages =
+proc mnistLoad*(imageFilePath: string, labelFilePath: string): seq[tuple[
+        a: int,
+        b: seq[int]]] =
     if not existsFile(labelFilePath):
         raise newException(IOError,
                 "Label path provided does not exist or is not a file.")
@@ -115,14 +115,16 @@ proc mnistLoad*(imageFilePath: string, labelFilePath: string): MnistImages =
     return mnistCombine(labels, images)
 
 
-proc mnistTrainingData*(sourceDir = ""): MnistImages =
+proc mnistTrainingData*(sourceDir = ""): seq[tuple[a: int,
+        b: seq[int]]] =
     if not existsFile(sourceDir & files[0]) or not existsFile(
             sourceDir & files[1]):
         mnistDownload(sourceDir)
     return mnistLoad(sourceDir & files[0], sourceDir & files[1])
 
 
-proc mnistTestData*(sourceDir = ""): MnistImages =
+proc mnistTestData*(sourceDir = ""): seq[tuple[a: int,
+        b: seq[int]]] =
     if not existsFile(sourceDir & files[2]) or not existsFile(
             sourceDir & files[3]):
         mnistDownload(sourceDir)
