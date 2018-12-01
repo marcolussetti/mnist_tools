@@ -9,30 +9,22 @@ nimble install https://github.com/marcolussetti/mnist_tools
 
 ## API
 
-This libraries provides 2 data types:
-```nim
-type
-    MnistImages* = seq[MnistImage]
-    MnistImage* = tuple[label: int, image: seq[int]]
-```
-
-
-and 6 functions:
+This libraries provides 6 functions:
 
 ```nim
 # Loads Training Data into a sequence of MnistImage
 # Downloads the files if not present in source directory
-proc mnistTrainingData*(sourceDir: string = ""): MnistImages
+proc mnistTrainingData*(sourceDir: string = ""): seq[tuple[a: int, b: seq[int]]]
 
 # Loads Training Data into a sequence of MnistImage
 # Downloads the files if not present in source directory
-proc mnistTestData*(sourceDir: string = ""): MnistImages
+proc mnistTestData*(sourceDir: string = ""): seq[tuple[a: int, b: seq[int]]]
 
 # Returns a string visualization of an image, showing items above the threshold
 proc mnistCoarseAsciiImage*(image: seq[int], cols: int = 28, threshold: int = 50): string
 
 # Allows for manually specifying paths to load
-proc mnistLoad*(imageFilePath: string, labelFilePath: string): MnistImages
+proc mnistLoad*(imageFilePath: string, labelFilePath: string): seq[tuple[a: int, b: seq[int]]]
 
 # Manually request download of MNIST files to specified directory
 proc mnistDownload*(outputDir: string = "")
