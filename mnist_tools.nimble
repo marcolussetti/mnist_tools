@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.1.0"
+version       = "0.1.1"
 author        = "Marco Lussetti"
 description   = "Tools for retrieving, manipulating, and displaying the MNIST datasets."
 license       = "MIT"
